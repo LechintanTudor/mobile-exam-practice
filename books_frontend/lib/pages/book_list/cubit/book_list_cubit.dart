@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -59,16 +60,12 @@ class BookListCubit extends Cubit<BookListState> {
 
       _websocketBookListener.connect((message) async {
         var book = Book.fromJson(jsonDecode(message));
-        await addBookFromWebsocket(book);
+        await _addBookFromWebsocket(book);
       });
     } on SocketException catch (_) {
-      var books = await _localBookRepository.getBooks();
-
-      emit(state.copyWith(
-        onlineStatus: OnlineStatus.offline,
-        status: LoadingStatus.success,
-        books: books,
-      ));
+      await _getAllBooksOffline();
+    } on TimeoutException catch (_) {
+      await _getAllBooksOffline();
     } catch (error) {
       emit(state.copyWith(
         status: LoadingStatus.error,
@@ -77,7 +74,7 @@ class BookListCubit extends Cubit<BookListState> {
     }
   }
 
-  Future<void> addBookFromWebsocket(Book book) async {
+  Future<void> _addBookFromWebsocket(Book book) async {
     await _localBookRepository.addBook(book);
 
     if (state.books.any((oldBook) => oldBook.id == book.id)) {
@@ -85,5 +82,15 @@ class BookListCubit extends Cubit<BookListState> {
     }
 
     emit(state.copyWith(books: [...state.books, book]));
+  }
+
+  Future<void> _getAllBooksOffline() async {
+    var books = await _localBookRepository.getBooks();
+
+    emit(state.copyWith(
+      onlineStatus: OnlineStatus.offline,
+      status: LoadingStatus.success,
+      books: books,
+    ));
   }
 }
