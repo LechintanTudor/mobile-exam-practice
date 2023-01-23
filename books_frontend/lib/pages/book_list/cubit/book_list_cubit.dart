@@ -79,6 +79,11 @@ class BookListCubit extends Cubit<BookListState> {
 
   Future<void> addBookFromWebsocket(Book book) async {
     await _localBookRepository.addBook(book);
+
+    if (state.books.any((oldBook) => oldBook.id == book.id)) {
+      return;
+    }
+
     emit(state.copyWith(books: [...state.books, book]));
   }
 }
