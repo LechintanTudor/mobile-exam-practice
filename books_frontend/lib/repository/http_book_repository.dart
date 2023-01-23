@@ -6,6 +6,8 @@ import 'package:books/utils/web.dart';
 import 'package:http/http.dart' as http;
 
 class HttpBookRepository implements BookRepository {
+  static const _requestTimeout = Duration(seconds: 5);
+
   const HttpBookRepository();
 
   @override
@@ -15,7 +17,7 @@ class HttpBookRepository implements BookRepository {
       body: <String, String>{
         'title': book.title,
       },
-    );
+    ).timeout(_requestTimeout);
 
     if (response.statusCode != 201) {
       throw const BookRepositoryError('Failed to add book');
@@ -26,7 +28,8 @@ class HttpBookRepository implements BookRepository {
 
   @override
   Future<List<Book>> getBooks() async {
-    var response = await http.get(Uri.parse('$apiBaseUrl/books'));
+    var response =
+        await http.get(Uri.parse('$apiBaseUrl/books')).timeout(_requestTimeout);
 
     if (response.statusCode != 200) {
       throw const BookRepositoryError('Failed to get books');
